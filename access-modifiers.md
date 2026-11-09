@@ -1,70 +1,69 @@
-# Access Modifiers in TypeScript OOP
+# Access Modifiers in TypeScript: public, private, protected and readonly
 
 ## Introduction
 
-A class holds data (properties) and behaviour (methods). Not every piece of data should be touched from everywhere in the program. Access modifiers are keywords that control who can read or change a property. TypeScript gives us four of them: `public`, `private`, `protected` and `readonly`. They help with encapsulation, which means protecting the internal state of an object and only changing it through methods we control.
+A class bundles data and the functions that work on that data. The problem is that by default every property is open, so any part of the program can reach in and change it. In a bank account class that would mean anyone could set the balance to a million. Access modifiers are the keywords that decide who is allowed to see or change a property. TypeScript has four of them and I will go through each with a small example built around a `BankAccount` class.
 
 ## public
 
-`public` is the default. Anything marked public can be used anywhere, inside the class, in child classes and from outside.
+If I write nothing, or write `public`, the member is reachable from anywhere.
 
 ```ts
-class Employee {
-  public name: string;
-  constructor(name: string) {
-    this.name = name;
+class BankAccount {
+  public owner: string;
+  constructor(owner: string) {
+    this.owner = owner;
   }
 }
-const emp = new Employee("Alice");
-emp.name = "Bob"; // allowed
+const acc = new BankAccount("Sadia");
+acc.owner = "Someone else"; // allowed, maybe not wise
 ```
 
 ## private
 
-`private` members can only be used inside the same class. Even a child class cannot see them.
+`private` locks the member inside the class. Not even a child class can touch it.
 
 ```ts
-class Employee {
-  private baseSalary: number;
-  constructor(baseSalary: number) {
-    this.baseSalary = baseSalary;
-  }
-  getSalary(): number {
-    return this.baseSalary; // fine here
+class BankAccount {
+  private balance: number = 0;
+  deposit(amount: number): void {
+    this.balance = this.balance + amount;
   }
 }
-// emp.baseSalary  -> Error: Property 'baseSalary' is private
+// acc.balance = 1000000; -> compile error, balance is private
 ```
+
+Now the only way in is through `deposit`, where I can add checks.
 
 ## protected
 
-`protected` sits in the middle. It is hidden from the outside world but child classes that `extends` the parent can still use it.
+`protected` is hidden from the outside but open to subclasses. This is handy for inheritance.
 
 ```ts
-class Employee {
-  protected name: string = "Alice";
+class BankAccount {
+  protected accountNumber: string = "AC-001";
 }
-class Manager extends Employee {
-  getRoleInfo(): string {
-    return `Manager: ${this.name}`; // allowed because of protected
+class SavingsAccount extends BankAccount {
+  getLabel(): string {
+    return `Savings ${this.accountNumber}`; // allowed in a child
   }
 }
 ```
 
 ## readonly
 
-`readonly` is different. It is not about visibility but about mutation. The value can be set once, usually in the constructor, and never changed again.
+`readonly` is about mutation rather than visibility. The value is set once and then frozen.
 
 ```ts
-class Employee {
-  readonly id: number;
-  constructor(id: number) {
-    this.id = id;
+class BankAccount {
+  readonly createdAt: Date;
+  constructor() {
+    this.createdAt = new Date();
   }
 }
-// emp.id = 99 -> Error: Cannot assign to 'id' because it is a read-only property
+// acc.createdAt = new Date(); -> compile error
 ```
 
 ## Conclusion
 
-Use `public` for things the outside world needs, `private` for internal details, `protected` when child classes need access, and `readonly` for values that must never change. Together they make classes safer and easier to reason about.
+My rule of thumb is simple. Start everything as `private`, open it to `protected` only when a subclass really needs it, make it `public` only when outside code must use it, and add `readonly` to anything that should never change after construction. The compiler then enforces those decisions for me.

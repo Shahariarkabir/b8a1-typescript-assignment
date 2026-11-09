@@ -1,56 +1,56 @@
-# Type Narrowing in TypeScript
+# Type Narrowing in TypeScript (and why I stopped fighting the compiler)
 
 ## Introduction
 
-When a variable can be more than one type, for example `string | number`, TypeScript does not let us call string methods on it right away. It does not know yet which one we actually have. Type narrowing is the process of checking the value inside the code so TypeScript can "narrow" the wide union type down to one specific type. After the check, we get full autocomplete and safety for that type.
+When I first used union types I kept hitting the same error. I had a parameter typed as `string | number` and I tried to call `.toUpperCase()` on it. TypeScript refused, because the value might be a number and numbers do not have that method. The fix was type narrowing. Narrowing means writing a small check in the code so that inside that block TypeScript knows exactly which type I am holding. After the check I get autocomplete and the compiler stops complaining. In this post I want to show the three checks I use the most.
 
-## Narrowing with typeof
+## typeof for primitive values
 
-The `typeof` operator works for primitive values like string, number and boolean.
+`typeof` is the right tool for string, number and boolean.
 
 ```ts
-const processInput = (input: string | number | boolean): string | number => {
-  if (typeof input === "string") {
-    return input.trim().toLowerCase();
+const describe = (value: string | number): string => {
+  if (typeof value === "string") {
+    return value.toUpperCase();
   }
-  if (typeof input === "number") {
-    return input * 10;
-  }
-  return input ? "Active" : "Inactive";
+  return (value * 2).toString();
 };
 ```
 
-Inside the first `if`, TypeScript knows `input` is a string, so `.trim()` is allowed. In the last line only boolean is left, so no extra check is needed.
+Inside the if block the value is a string, so `.toUpperCase()` is allowed. After the if, only number is left, so TypeScript lets me multiply.
 
-## Narrowing with instanceof
+## instanceof for class objects
 
-For class objects we use `instanceof`. It checks which class created the object.
+When the union is made of classes I check which constructor created the object.
 
 ```ts
-const describe = (pet: Dog | Cat): string => {
-  if (pet instanceof Dog) {
-    return pet.bark();
+class Bike { ring(): string { return "ring ring"; } }
+class Car { honk(): string { return "beep"; } }
+
+const makeNoise = (vehicle: Bike | Car): string => {
+  if (vehicle instanceof Bike) {
+    return vehicle.ring();
   }
-  return pet.meow();
+  return vehicle.honk();
 };
 ```
 
-## Narrowing with the in operator
+## in for plain object shapes
 
-When we have plain objects, `in` checks whether a property exists on the object.
+For objects that are not classes I ask whether a property exists.
 
 ```ts
-type Car = { wheels: number };
-type Boat = { sails: number };
+type Email = { address: string };
+type Phone = { number: string };
 
-const move = (vehicle: Car | Boat): string => {
-  if ("wheels" in vehicle) {
-    return `Driving on ${vehicle.wheels} wheels`;
+const contact = (method: Email | Phone): string => {
+  if ("address" in method) {
+    return `Emailing ${method.address}`;
   }
-  return `Sailing with ${vehicle.sails} sails`;
+  return `Calling ${method.number}`;
 };
 ```
 
 ## Conclusion
 
-Type narrowing lets us write one function that safely handles many types. Use `typeof` for primitives, `instanceof` for class instances, and `in` for object shapes. Each check tells the compiler exactly what we are working with, so bugs are caught before the code ever runs.
+Narrowing turned the compiler from an obstacle into a helper. I use `typeof` for primitives, `instanceof` for class instances and `in` for object shapes. Each one is a plain JavaScript check, but TypeScript reads it and tightens the type for me, which catches bugs before the code runs.
